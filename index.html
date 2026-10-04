@@ -6,81 +6,109 @@
 <title>Jungle Climb</title>
 
 <style>
-* { box-sizing:border-box; }
+* {
+    box-sizing: border-box;
+}
 
-html,body {
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#82d4ff;
-    font-family:Arial,sans-serif;
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #82d4ff;
+    font-family: Arial, sans-serif;
 }
 
 canvas {
-    display:block;
+    display: block;
 }
 
 #hud {
-    position:fixed;
-    top:15px;
-    left:15px;
-    z-index:10;
-    color:white;
-    background:rgba(0,0,0,.55);
-    padding:14px 17px;
-    border-radius:12px;
-    line-height:1.5;
-    pointer-events:none;
+    position: fixed;
+    z-index: 10;
+    left: 15px;
+    top: 15px;
+
+    color: white;
+    background: rgba(0,0,0,.55);
+
+    padding: 14px 17px;
+    border-radius: 12px;
+
+    line-height: 1.45;
+    pointer-events: none;
 }
 
 #hud b {
-    color:#75ff6e;
-    font-size:19px;
+    color: #75ff6e;
+    font-size: 19px;
 }
 
 #crosshair {
-    position:fixed;
-    left:50%;
-    top:50%;
-    width:5px;
-    height:5px;
-    margin:-2.5px;
-    background:white;
-    border-radius:50%;
-    box-shadow:0 0 5px black;
-    pointer-events:none;
+    position: fixed;
+    z-index: 11;
+
+    left: 50%;
+    top: 50%;
+
+    width: 5px;
+    height: 5px;
+
+    margin: -2.5px;
+
+    border-radius: 50%;
+    background: white;
+
+    box-shadow: 0 0 5px black;
+
+    pointer-events: none;
 }
 
 #start {
-    position:fixed;
-    inset:0;
-    z-index:20;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:rgba(0,0,0,.65);
-    color:white;
+    position: fixed;
+    inset: 0;
+
+    z-index: 30;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0,0,0,.65);
+
+    color: white;
 }
 
 #panel {
-    width:min(460px,90%);
-    padding:30px;
-    border-radius:20px;
-    text-align:center;
-    background:#172018;
-    box-shadow:0 20px 70px #0009;
+    width: min(460px,90%);
+
+    padding: 30px;
+
+    text-align: center;
+
+    border-radius: 20px;
+
+    background: #172018;
+
+    box-shadow: 0 20px 70px #0009;
 }
 
 #startButton {
-    border:0;
-    border-radius:12px;
-    padding:14px 28px;
-    background:#55d94e;
-    color:#071007;
-    font-size:17px;
-    font-weight:bold;
-    cursor:pointer;
+    border: 0;
+
+    padding: 14px 28px;
+
+    border-radius: 12px;
+
+    background: #55d94e;
+
+    color: #071007;
+
+    font-size: 17px;
+    font-weight: bold;
+
+    cursor: pointer;
 }
 </style>
 </head>
@@ -90,10 +118,10 @@ canvas {
 <div id="hud">
     <b>Jungle Climb</b><br>
     Mouse = look<br>
-    Left mouse = left hand<br>
-    Right mouse = right hand<br>
-    Move while gripping = push / climb<br>
-    Space = launch<br>
+    LMB = left hand grip<br>
+    RMB = right hand grip<br>
+    Move while gripping = push<br>
+    Space = jump<br>
     R = respawn
 </div>
 
@@ -104,13 +132,14 @@ canvas {
         <h1>🦍 Jungle Climb</h1>
 
         <p>
-            Use your hands instead of normal character
-            movement. Grab surfaces and move your arms
-            to push yourself around.
+            Move around using your hands.
+            Grab surfaces and push away to build
+            momentum.
         </p>
 
         <p>
-            VR controllers are supported when available.
+            WebXR controllers are supported when
+            your browser/headset allows it.
         </p>
 
         <button id="startButton">
@@ -118,6 +147,7 @@ canvas {
         </button>
     </div>
 </div>
+
 
 <script type="module">
 
@@ -170,8 +200,8 @@ camera.position.set(
 
 const renderer =
     new THREE.WebGLRenderer({
-        antialias:true,
-        powerPreference:"high-performance"
+        antialias: true,
+        powerPreference: "high-performance"
     });
 
 renderer.setSize(
@@ -180,15 +210,18 @@ renderer.setSize(
 );
 
 renderer.setPixelRatio(
-    Math.min(devicePixelRatio,2)
+    Math.min(
+        devicePixelRatio,
+        2
+    )
 );
 
-renderer.shadowMap.enabled=true;
+renderer.shadowMap.enabled = true;
 
 renderer.shadowMap.type =
     THREE.PCFSoftShadowMap;
 
-renderer.xr.enabled=true;
+renderer.xr.enabled = true;
 
 document.body.appendChild(
     renderer.domElement
@@ -215,7 +248,7 @@ sun.position.set(
     20
 );
 
-sun.castShadow=true;
+sun.castShadow = true;
 
 sun.shadow.mapSize.set(
     2048,
@@ -237,72 +270,81 @@ scene.add(
 // MATERIALS
 // ============================================================
 
-const grassMat =
+const grassMaterial =
     new THREE.MeshStandardMaterial({
-        color:0x429b42,
-        roughness:1
+        color: 0x429b42,
+        roughness: 1
     });
 
-const dirtMat =
+const dirtMaterial =
     new THREE.MeshStandardMaterial({
-        color:0x70452b,
-        roughness:1
+        color: 0x70452b,
+        roughness: 1
     });
 
-const rockMat =
+const rockMaterial =
     new THREE.MeshStandardMaterial({
-        color:0x747875,
-        roughness:1
+        color: 0x747875,
+        roughness: .95
     });
 
-const woodMat =
+const woodMaterial =
     new THREE.MeshStandardMaterial({
-        color:0x6d3f20,
-        roughness:1
+        color: 0x6d3f20,
+        roughness: 1
     });
 
-const leafMat =
+const leafMaterial =
     new THREE.MeshStandardMaterial({
-        color:0x217a31,
-        roughness:1
+        color: 0x217a31,
+        roughness: 1
     });
 
-const playerMat =
+const playerMaterial =
     new THREE.MeshStandardMaterial({
-        color:0x995c36,
-        roughness:.95
+        color: 0x995c36,
+        roughness: .95
     });
 
 
 // ============================================================
-// WORLD COLLIDERS
+// COLLIDERS
 // ============================================================
 
-const colliders=[];
+const colliders = [];
+
 
 function addBox(
-    x,y,z,
-    sx,sy,sz,
+    x,
+    y,
+    z,
+    width,
+    height,
+    depth,
     material,
-    climbable=true
+    climbable = true
 ) {
 
     const mesh =
         new THREE.Mesh(
             new THREE.BoxGeometry(
-                sx,sy,sz
+                width,
+                height,
+                depth
             ),
             material
         );
 
     mesh.position.set(
-        x,y,z
+        x,
+        y,
+        z
     );
 
-    mesh.castShadow=true;
-    mesh.receiveShadow=true;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
 
-    mesh.userData.climbable=
+    mesh.userData.climbable =
         climbable;
 
     scene.add(mesh);
@@ -318,9 +360,13 @@ function addBox(
 // ============================================================
 
 addBox(
-    0,-.5,0,
-    100,1,100,
-    grassMat,
+    0,
+    -.5,
+    0,
+    100,
+    1,
+    100,
+    grassMaterial,
     false
 );
 
@@ -330,54 +376,88 @@ addBox(
 // ============================================================
 
 addBox(
-    0,2,-5,
-    8,4,8,
-    dirtMat
+    0,
+    2,
+    -5,
+    8,
+    4,
+    8,
+    dirtMaterial
 );
 
 addBox(
-    -9,3,-11,
-    6,.7,6,
-    rockMat
+    -9,
+    3,
+    -11,
+    6,
+    .7,
+    6,
+    rockMaterial
 );
 
 addBox(
-    9,4,-14,
-    6,.7,6,
-    dirtMat
+    9,
+    4,
+    -14,
+    6,
+    .7,
+    6,
+    dirtMaterial
 );
 
 addBox(
-    -2,6,-20,
-    8,.7,8,
-    rockMat
+    -2,
+    6,
+    -20,
+    8,
+    .7,
+    8,
+    rockMaterial
 );
 
 addBox(
-    11,8,-26,
-    7,.7,7,
-    dirtMat
+    11,
+    8,
+    -26,
+    7,
+    .7,
+    7,
+    dirtMaterial
 );
 
 addBox(
-    -12,9,-29,
-    7,.7,7,
-    rockMat
+    -12,
+    9,
+    -29,
+    7,
+    .7,
+    7,
+    rockMaterial
 );
 
 
-// climbing walls
+// ============================================================
+// WALLS
+// ============================================================
 
 addBox(
-    -18,7,-20,
-    1,14,38,
-    rockMat
+    -18,
+    7,
+    -20,
+    1,
+    14,
+    38,
+    rockMaterial
 );
 
 addBox(
-    18,7,-20,
-    1,14,38,
-    rockMat
+    18,
+    7,
+    -20,
+    1,
+    14,
+    38,
+    rockMaterial
 );
 
 
@@ -385,62 +465,100 @@ addBox(
 // TREES
 // ============================================================
 
-function makeTree(x,z,s=1) {
+function createTree(
+    x,
+    z,
+    scale = 1
+) {
 
     const trunk =
         new THREE.Mesh(
             new THREE.CylinderGeometry(
-                .5*s,
-                .75*s,
-                7*s,
+                .5 * scale,
+                .75 * scale,
+                7 * scale,
                 12
             ),
-            woodMat
+            woodMaterial
         );
 
     trunk.position.set(
         x,
-        3.5*s,
+        3.5 * scale,
         z
     );
 
-    trunk.castShadow=true;
+    trunk.castShadow = true;
 
     scene.add(trunk);
 
-    colliders.push(trunk);
+    /*
+        Approximate tree trunk with a box-like
+        collision volume so hand/body collision
+        is stable.
+    */
+
+    const collider =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                .6 * scale,
+                .8 * scale,
+                7 * scale,
+                12
+            )
+        );
+
+    collider.position.copy(
+        trunk.position
+    );
+
+    collider.visible = false;
+
+    collider.userData.climbable = true;
+
+    scene.add(collider);
+
+    colliders.push(collider);
 
 
-    for(let i=0;i<7;i++) {
+    for(let i = 0; i < 7; i++) {
 
         const crown =
             new THREE.Mesh(
                 new THREE.SphereGeometry(
-                    1.6*s,
+                    1.6 * scale,
                     12,
                     12
                 ),
-                leafMat
+                leafMaterial
             );
 
         crown.position.set(
-            x+(Math.random()-.5)*3*s,
-            6*s+Math.random()*3*s,
-            z+(Math.random()-.5)*3*s
+            x +
+            (Math.random() - .5) *
+            3 * scale,
+
+            6 * scale +
+            Math.random() *
+            3 * scale,
+
+            z +
+            (Math.random() - .5) *
+            3 * scale
         );
 
-        crown.castShadow=true;
+        crown.castShadow = true;
 
         scene.add(crown);
     }
 }
 
-makeTree(-12,4,1.1);
-makeTree(13,2,1.2);
-makeTree(-14,-13,1);
-makeTree(14,-19,1.1);
-makeTree(-8,-31,1.3);
-makeTree(12,-36,1.2);
+createTree(-12,4,1.1);
+createTree(13,2,1.2);
+createTree(-14,-13,1);
+createTree(14,-19,1.1);
+createTree(-8,-31,1.3);
+createTree(12,-36,1.2);
 
 
 // ============================================================
@@ -483,7 +601,7 @@ const body =
             24,
             20
         ),
-        playerMat
+        playerMaterial
     );
 
 body.scale.set(
@@ -492,9 +610,9 @@ body.scale.set(
     .8
 );
 
-body.position.y=-.45;
+body.position.y = -.45;
 
-body.castShadow=true;
+body.castShadow = true;
 
 player.add(body);
 
@@ -510,10 +628,12 @@ const head =
             20,
             20
         ),
-        playerMat
+        playerMaterial
     );
 
-head.position.y=.25;
+head.position.y = .25;
+
+head.castShadow = true;
 
 player.add(head);
 
@@ -522,38 +642,47 @@ player.add(head);
 // EARS
 // ============================================================
 
-function makeEar() {
+function createEar() {
 
-    return new THREE.Mesh(
-        new THREE.SphereGeometry(
-            .14,
-            12,
-            12
-        ),
-        playerMat
-    );
+    const ear =
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                .14,
+                12,
+                12
+            ),
+            playerMaterial
+        );
+
+    ear.castShadow = true;
+
+    return ear;
 }
 
-const earL=makeEar();
-const earR=makeEar();
+const leftEar = createEar();
+const rightEar = createEar();
 
-earL.position.set(
-    -.35,.27,0
+leftEar.position.set(
+    -.35,
+    .27,
+    0
 );
 
-earR.position.set(
-    .35,.27,0
+rightEar.position.set(
+    .35,
+    .27,
+    0
 );
 
-player.add(earL);
-player.add(earR);
+player.add(leftEar);
+player.add(rightEar);
 
 
 // ============================================================
 // HANDS
 // ============================================================
 
-function makeHand() {
+function createHand() {
 
     const group =
         new THREE.Group();
@@ -565,22 +694,24 @@ function makeHand() {
                 16,
                 16
             ),
-            playerMat
+            playerMaterial
         );
 
     palm.scale.set(
-        1,.85,.75
+        1,
+        .85,
+        .75
     );
 
-    palm.castShadow=true;
+    palm.castShadow = true;
 
     group.add(palm);
 
     return group;
 }
 
-const leftHand=makeHand();
-const rightHand=makeHand();
+const leftHand = createHand();
+const rightHand = createHand();
 
 player.add(leftHand);
 player.add(rightHand);
@@ -590,7 +721,7 @@ player.add(rightHand);
 // ARMS
 // ============================================================
 
-function makeArm() {
+function createArm() {
 
     const arm =
         new THREE.Mesh(
@@ -600,16 +731,16 @@ function makeArm() {
                 1,
                 12
             ),
-            playerMat
+            playerMaterial
         );
 
-    arm.castShadow=true;
+    arm.castShadow = true;
 
     return arm;
 }
 
-const leftArm=makeArm();
-const rightArm=makeArm();
+const leftArm = createArm();
+const rightArm = createArm();
 
 player.add(leftArm);
 player.add(rightArm);
@@ -622,44 +753,49 @@ player.add(rightArm);
 const velocity =
     new THREE.Vector3();
 
-const previousVelocity =
-    new THREE.Vector3();
+const bodyRadius = .55;
 
-const gravity=-19;
+const gravity = -19;
 
-const bodyRadius=.55;
-
-let grounded=false;
+let grounded = false;
 
 
 // ============================================================
-// MOUSE
+// MOUSE STATE
 // ============================================================
 
-let yaw=0;
-let pitch=0;
+let yaw = 0;
+let pitch = 0;
 
-let mouseDX=0;
-let mouseDY=0;
+let leftGrip = false;
+let rightGrip = false;
 
-let leftGrip=false;
-let rightGrip=false;
+let mouseDX = 0;
+let mouseDY = 0;
 
+
+// ============================================================
+// MOUSE LOOK
+// ============================================================
 
 document.addEventListener(
     "mousemove",
-    e => {
+    event => {
 
         if(
             document.pointerLockElement !==
             renderer.domElement
-        ) return;
+        ) {
+            return;
+        }
 
         yaw -=
-            e.movementX*.0025;
+            event.movementX *
+            .0025;
 
         pitch -=
-            e.movementY*.0025;
+            event.movementY *
+            .0025;
 
         pitch =
             THREE.MathUtils.clamp(
@@ -668,41 +804,48 @@ document.addEventListener(
                 1.35
             );
 
-        mouseDX=e.movementX;
-        mouseDY=e.movementY;
+        mouseDX =
+            event.movementX;
+
+        mouseDY =
+            event.movementY;
     }
 );
 
+
+// ============================================================
+// MOUSE GRIP
+// ============================================================
 
 document.addEventListener(
     "mousedown",
-    e => {
+    event => {
 
-        if(e.button===0)
-            leftGrip=true;
+        if(event.button === 0)
+            leftGrip = true;
 
-        if(e.button===2)
-            rightGrip=true;
+        if(event.button === 2)
+            rightGrip = true;
     }
 );
-
 
 document.addEventListener(
     "mouseup",
-    e => {
+    event => {
 
-        if(e.button===0)
-            leftGrip=false;
+        if(event.button === 0)
+            leftGrip = false;
 
-        if(e.button===2)
-            rightGrip=false;
+        if(event.button === 2)
+            rightGrip = false;
     }
 );
 
-
 document.addEventListener(
     "contextmenu",
-    e => e.preventDefault()
+    event => {
+        event.preventDefault();
+    }
 );
 
 
@@ -710,38 +853,27 @@ document.addEventListener(
 // KEYBOARD
 // ============================================================
 
-const keys={};
-
 document.addEventListener(
     "keydown",
-    e => {
+    event => {
 
-        keys[e.code]=true;
-
-        if(e.code==="KeyR")
+        if(event.code === "KeyR") {
             respawn();
+        }
 
         if(
-            e.code==="Space" &&
+            event.code === "Space" &&
             grounded
         ) {
 
-            velocity.y=
+            velocity.y =
                 Math.max(
                     velocity.y,
                     7
                 );
 
-            grounded=false;
+            grounded = false;
         }
-    }
-);
-
-
-document.addEventListener(
-    "keyup",
-    e => {
-        keys[e.code]=false;
     }
 );
 
@@ -758,16 +890,18 @@ document
 
         document
         .getElementById("start")
-        .style.display="none";
+        .style.display =
+            "none";
 
-        renderer.domElement
-            .requestPointerLock();
+        renderer
+        .domElement
+        .requestPointerLock();
     }
 );
 
 
 // ============================================================
-// MOUSE HAND TARGETS
+// HAND TARGETS
 // ============================================================
 
 const leftTarget =
@@ -777,25 +911,28 @@ const rightTarget =
     new THREE.Vector3();
 
 
-function updateMouseHands(dt) {
+function updateHands(dt) {
 
     /*
-       Mouse movement controls the hand
-       positions.
+        Decay the mouse delta after using it.
 
-       In VR these positions are replaced
-       by controller positions.
+        This prevents a single mouse movement
+        from continuously applying force.
     */
 
+    const dx = mouseDX;
+    const dy = mouseDY;
+
+
     leftTarget.set(
-        -.62 + mouseDX*.012,
-        -.18 - mouseDY*.012,
+        -.62 + dx * .012,
+        -.18 - dy * .012,
         -.72
     );
 
     rightTarget.set(
-        .62 + mouseDX*.012,
-        -.18 - mouseDY*.012,
+        .62 + dx * .012,
+        -.18 - dy * .012,
         -.72
     );
 
@@ -803,7 +940,7 @@ function updateMouseHands(dt) {
     leftTarget.x =
         THREE.MathUtils.clamp(
             leftTarget.x,
-            -1.4,
+            -1.35,
             .15
         );
 
@@ -811,59 +948,70 @@ function updateMouseHands(dt) {
         THREE.MathUtils.clamp(
             rightTarget.x,
             -.15,
-            1.4
+            1.35
         );
 
 
     leftTarget.y =
         THREE.MathUtils.clamp(
             leftTarget.y,
-            -1.25,
+            -1.2,
             1.1
         );
 
     rightTarget.y =
         THREE.MathUtils.clamp(
             rightTarget.y,
-            -1.25,
+            -1.2,
             1.1
         );
 
 
-    const smooth =
-        1-Math.pow(.0005,dt);
+    const smoothing =
+        1 - Math.pow(
+            .0005,
+            dt
+        );
 
 
     leftHand.position.lerp(
         leftTarget,
-        smooth
+        smoothing
     );
 
     rightHand.position.lerp(
         rightTarget,
-        smooth
+        smoothing
     );
 
 
-    aimArm(
+    updateArm(
         leftArm,
         leftHand.position,
         -.38
     );
 
-    aimArm(
+    updateArm(
         rightArm,
         rightHand.position,
         .38
     );
+
+
+    /*
+        Slowly return mouse input to zero.
+    */
+
+    mouseDX *= .25;
+    mouseDY *= .25;
 }
 
 
 // ============================================================
-// ARM AIMING
+// ARM
 // ============================================================
 
-function aimArm(
+function updateArm(
     arm,
     target,
     shoulderX
@@ -883,8 +1031,15 @@ function aimArm(
             shoulder
         );
 
-    const length=
-        direction.length();
+    const length =
+        THREE.MathUtils.clamp(
+            direction.length(),
+            .35,
+            1.6
+        );
+
+
+    direction.normalize();
 
 
     arm.position.copy(
@@ -893,47 +1048,49 @@ function aimArm(
 
     arm.position.add(
         direction.clone()
-        .multiplyScalar(.5)
+        .multiplyScalar(
+            length * .5
+        )
     );
 
-    arm.scale.y =
-        Math.max(
-            .3,
-            length
-        );
 
-    arm.quaternion
+    arm.scale.y =
+        length;
+
+
+    arm.quaternion =
+        new THREE.Quaternion()
         .setFromUnitVectors(
             new THREE.Vector3(
                 0,1,0
             ),
-            direction.normalize()
+            direction
         );
 }
 
 
 // ============================================================
-// FIND HAND CONTACT
+// CONTACT
 // ============================================================
 
-const worldHand =
+const worldPosition =
     new THREE.Vector3();
 
-const contactPoint =
+const nearestPoint =
     new THREE.Vector3();
 
 
-function getContact(hand) {
+function findContact(hand) {
 
     hand.getWorldPosition(
-        worldHand
+        worldPosition
     );
 
 
-    let closestDistance=
-        Infinity;
+    let best = null;
 
-    let best=null;
+    let bestDistance =
+        Infinity;
 
 
     for(
@@ -941,39 +1098,43 @@ function getContact(hand) {
     ) {
 
         if(
-            !object.userData.climbable
-        )
+            object.userData.climbable !==
+            true
+        ) {
             continue;
+        }
 
 
         const bounds =
             new THREE.Box3()
-            .setFromObject(object);
+            .setFromObject(
+                object
+            );
 
 
         bounds.clampPoint(
-            worldHand,
-            contactPoint
+            worldPosition,
+            nearestPoint
         );
 
 
         const distance =
-            worldHand.distanceTo(
-                contactPoint
+            worldPosition.distanceTo(
+                nearestPoint
             );
 
 
         if(
-            distance<
-            closestDistance
+            distance < bestDistance
         ) {
 
-            closestDistance=
+            bestDistance =
                 distance;
 
-            best={
-                object,
-                point:contactPoint.clone(),
+            best = {
+                point:
+                    nearestPoint.clone(),
+
                 distance
             };
         }
@@ -982,28 +1143,30 @@ function getContact(hand) {
 
     if(
         best &&
-        best.distance<.38
-    )
+        best.distance < .42
+    ) {
         return best;
+    }
+
 
     return null;
 }
 
 
 // ============================================================
-// HAND LOCOMOTION
+// ARM-BASED MOVEMENT
 // ============================================================
 
-function handLocomotion() {
+function applyHandMovement() {
 
-    const hands=[
+    const hands = [
         {
-            hand:leftHand,
-            grip:leftGrip
+            hand: leftHand,
+            gripping: leftGrip
         },
         {
-            hand:rightHand,
-            grip:rightGrip
+            hand: rightHand,
+            gripping: rightGrip
         }
     ];
 
@@ -1012,12 +1175,12 @@ function handLocomotion() {
         const item of hands
     ) {
 
-        if(!item.grip)
+        if(!item.gripping)
             continue;
 
 
-        const contact=
-            getContact(
+        const contact =
+            findContact(
                 item.hand
             );
 
@@ -1026,134 +1189,59 @@ function handLocomotion() {
             continue;
 
 
-        /*
-          The hand is touching a surface.
+        item.hand.getWorldPosition(
+            worldPosition
+        );
 
-          Push the player's body away from
-          that surface.
-        */
 
-        const direction =
+        const push =
             new THREE.Vector3()
             .subVectors(
-                worldHand,
+                worldPosition,
                 contact.point
             );
 
 
+        /*
+            If the hand is exactly inside
+            the surface, don't normalize a
+            zero vector.
+        */
+
         if(
-            direction.lengthSq()<.0001
-        )
+            push.lengthSq() <
+            .000001
+        ) {
             continue;
+        }
 
 
-        direction.normalize();
+        push.normalize();
 
 
-        const strength=
-            .42;
+        /*
+            Physical push.
 
+            Higher value = stronger movement.
+        */
 
         velocity.addScaledVector(
-            direction,
-            strength
+            push,
+            .48
         );
 
 
         /*
-          Pulling the hand downward while
-          gripping can launch the player upward.
+            Give the player a little extra
+            lift when pushing upward.
         */
 
-        if(direction.y>.2)
-            velocity.y+=.12;
+        if(push.y > .25) {
+
+            velocity.y +=
+                .08;
+        }
     }
-}
-
-
-// ============================================================
-// MOUSE ARM SWING
-// ============================================================
-
-let lastDX=0;
-let lastDY=0;
-
-function mouseArmSwing() {
-
-    if(
-        !leftGrip &&
-        !rightGrip
-    ) {
-
-        lastDX=mouseDX;
-        lastDY=mouseDY;
-
-        return;
-    }
-
-
-    const dx=
-        mouseDX-lastDX;
-
-    const dy=
-        mouseDY-lastDY;
-
-
-    /*
-      Move the arm backward:
-      push the body forward.
-    */
-
-    const forward =
-        new THREE.Vector3(
-            -Math.sin(yaw),
-            0,
-            -Math.cos(yaw)
-        );
-
-
-    const side =
-        new THREE.Vector3(
-            Math.cos(yaw),
-            0,
-            -Math.sin(yaw)
-        );
-
-
-    const armForce=
-        .020;
-
-
-    if(leftGrip) {
-
-        velocity.addScaledVector(
-            forward,
-            dx*armForce
-        );
-
-        velocity.addScaledVector(
-            side,
-            dy*armForce*.4
-        );
-    }
-
-
-    if(rightGrip) {
-
-        velocity.addScaledVector(
-            forward,
-            dx*armForce
-        );
-
-        velocity.addScaledVector(
-            side,
-            -dy*armForce*.4
-        );
-    }
-
-
-    lastDX=mouseDX;
-    lastDY=mouseDY;
 }
 
 
@@ -1161,57 +1249,63 @@ function mouseArmSwing() {
 // PHYSICS
 // ============================================================
 
-function physics(dt) {
-
-    previousVelocity.copy(
-        velocity
-    );
-
+function updatePhysics(dt) {
 
     velocity.y +=
-        gravity*dt;
+        gravity * dt;
 
 
-    const drag=
+    /*
+        Momentum is intentionally preserved
+        strongly while airborne.
+    */
+
+    const drag =
         grounded
         ? .82
-        : .988;
+        : .992;
 
 
     velocity.x *=
         Math.pow(
             drag,
-            dt*60
+            dt * 60
         );
 
     velocity.z *=
         Math.pow(
             drag,
-            dt*60
+            dt * 60
         );
 
 
-    const horizontalSpeed=
-        Math.sqrt(
-            velocity.x**2+
-            velocity.z**2
+    /*
+        Prevent absurd browser physics speeds.
+    */
+
+    const horizontalSpeed =
+        Math.hypot(
+            velocity.x,
+            velocity.z
         );
 
-
-    const maximum=15;
+    const maximumSpeed = 18;
 
 
     if(
-        horizontalSpeed>
-        maximum
+        horizontalSpeed >
+        maximumSpeed
     ) {
 
-        const scale=
-            maximum/
+        const multiplier =
+            maximumSpeed /
             horizontalSpeed;
 
-        velocity.x*=scale;
-        velocity.z*=scale;
+        velocity.x *=
+            multiplier;
+
+        velocity.z *=
+            multiplier;
     }
 
 
@@ -1226,28 +1320,31 @@ function physics(dt) {
 // COLLISION
 // ============================================================
 
-function collision() {
+function resolveCollision() {
 
-    grounded=false;
+    grounded = false;
 
-    const p=
+
+    const p =
         player.position;
 
 
     // Ground.
 
     if(
-        p.y<bodyRadius
+        p.y < bodyRadius
     ) {
 
-        p.y=bodyRadius;
+        p.y =
+            bodyRadius;
 
         if(
-            velocity.y<0
-        )
-            velocity.y=0;
+            velocity.y < 0
+        ) {
+            velocity.y = 0;
+        }
 
-        grounded=true;
+        grounded = true;
     }
 
 
@@ -1255,27 +1352,32 @@ function collision() {
         const object of colliders
     ) {
 
-        const bounds=
+        const bounds =
             new THREE.Box3()
-            .setFromObject(object);
+            .setFromObject(
+                object
+            );
 
 
-        // Ignore giant ground collider.
-
-        const size=
+        const size =
             bounds.getSize(
                 new THREE.Vector3()
             );
 
+
+        // Ignore the giant ground collider.
+
         if(
-            size.x>50 &&
-            size.z>50
-        )
+            size.x > 50 &&
+            size.z > 50
+        ) {
             continue;
+        }
 
 
-        const nearest=
+        const nearest =
             new THREE.Vector3();
+
 
         bounds.clampPoint(
             p,
@@ -1283,7 +1385,7 @@ function collision() {
         );
 
 
-        const offset=
+        const difference =
             new THREE.Vector3()
             .subVectors(
                 p,
@@ -1291,75 +1393,156 @@ function collision() {
             );
 
 
-        const distance=
-            offset.length();
-
-
-        if(
-            distance>=bodyRadius
-        )
-            continue;
-
-
-        // Landing.
+        /*
+            If the body is inside a collider,
+            choose a sensible outward direction.
+        */
 
         if(
-            p.y>
-            bounds.max.y-.7 &&
-            velocity.y<=0
+            difference.lengthSq() <
+            .000001
         ) {
 
-            p.y=
-                bounds.max.y+
+            const distances = [
+                {
+                    direction:
+                        new THREE.Vector3(1,0,0),
+
+                    distance:
+                        Math.abs(
+                            p.x -
+                            bounds.max.x
+                        )
+                },
+                {
+                    direction:
+                        new THREE.Vector3(-1,0,0),
+
+                    distance:
+                        Math.abs(
+                            p.x -
+                            bounds.min.x
+                        )
+                },
+                {
+                    direction:
+                        new THREE.Vector3(0,0,1),
+
+                    distance:
+                        Math.abs(
+                            p.z -
+                            bounds.max.z
+                        )
+                },
+                {
+                    direction:
+                        new THREE.Vector3(0,0,-1),
+
+                    distance:
+                        Math.abs(
+                            p.z -
+                            bounds.min.z
+                        )
+                }
+            ];
+
+
+            distances.sort(
+                (a,b)=>
+                    a.distance -
+                    b.distance
+            );
+
+
+            difference.copy(
+                distances[0].direction
+            );
+        }
+
+
+        const distance =
+            difference.length();
+
+
+        if(
+            distance >= bodyRadius
+        ) {
+            continue;
+        }
+
+
+        /*
+            Landing on top.
+        */
+
+        if(
+            p.y >=
+            bounds.max.y - .65 &&
+            velocity.y <= 0
+        ) {
+
+            p.y =
+                bounds.max.y +
                 bodyRadius;
 
-            velocity.y=0;
+            velocity.y = 0;
 
-            grounded=true;
+            grounded = true;
 
             continue;
         }
 
 
-        // Wall collision.
+        /*
+            Horizontal wall collision.
+        */
 
-        offset.y=0;
+        difference.y = 0;
 
 
         if(
-            offset.lengthSq()>.00001
+            difference.lengthSq() >
+            .000001
         ) {
 
-            offset.normalize();
+            difference.normalize();
 
 
-            const penetration=
-                bodyRadius-
+            const penetration =
+                bodyRadius -
                 distance;
 
 
-            p.addScaledVector(
-                offset,
-                Math.max(
-                    0,
+            if(
+                penetration > 0
+            ) {
+
+                p.addScaledVector(
+                    difference,
                     penetration
-                )
-            );
+                );
+            }
 
 
-            const intoWall=
+            /*
+                Remove only velocity going
+                into the wall. Tangential
+                momentum remains.
+            */
+
+            const wallVelocity =
                 velocity.dot(
-                    offset
+                    difference
                 );
 
 
             if(
-                intoWall<0
+                wallVelocity < 0
             ) {
 
                 velocity.addScaledVector(
-                    offset,
-                    -intoWall
+                    difference,
+                    -wallVelocity
                 );
             }
         }
@@ -1368,184 +1551,148 @@ function collision() {
 
 
 // ============================================================
-// WEBXR CONTROLLERS
+// VR CONTROLLERS
 // ============================================================
 
-const controllerL =
+const vrLeft =
     renderer.xr.getController(0);
 
-const controllerR =
+const vrRight =
     renderer.xr.getController(1);
 
-scene.add(controllerL);
-scene.add(controllerR);
+scene.add(vrLeft);
+scene.add(vrRight);
 
 
-const controllerGripL =
-    renderer.xr.getControllerGrip(0);
-
-const controllerGripR =
-    renderer.xr.getControllerGrip(1);
-
-scene.add(controllerGripL);
-scene.add(controllerGripR);
+let vrLeftGrip = false;
+let vrRightGrip = false;
 
 
-function controllerModel() {
-
-    const hand =
-        new THREE.Mesh(
-            new THREE.SphereGeometry(
-                .13,
-                12,
-                12
-            ),
-            playerMat
-        );
-
-    return hand;
-}
-
-
-const vrHandL=
-    controllerModel();
-
-const vrHandR=
-    controllerModel();
-
-controllerL.add(vrHandL);
-controllerR.add(vrHandR);
-
-
-let vrLeftGrip=false;
-let vrRightGrip=false;
-
-
-controllerL.addEventListener(
+vrLeft.addEventListener(
     "selectstart",
-    ()=>{
-        vrLeftGrip=true;
+    () => {
+        vrLeftGrip = true;
     }
 );
 
-controllerL.addEventListener(
+vrLeft.addEventListener(
     "selectend",
-    ()=>{
-        vrLeftGrip=false;
+    () => {
+        vrLeftGrip = false;
     }
 );
 
-controllerR.addEventListener(
+vrRight.addEventListener(
     "selectstart",
-    ()=>{
-        vrRightGrip=true;
+    () => {
+        vrRightGrip = true;
     }
 );
 
-controllerR.addEventListener(
+vrRight.addEventListener(
     "selectend",
-    ()=>{
-        vrRightGrip=false;
+    () => {
+        vrRightGrip = false;
     }
 );
 
 
-// ============================================================
-// VR HAND MOVEMENT
-// ============================================================
-
-const previousControllerL=
+const previousVRLeft =
     new THREE.Vector3();
 
-const previousControllerR=
+const previousVRRight =
     new THREE.Vector3();
 
-let vrInitialized=false;
+let vrReady = false;
 
 
-function updateVR(dt) {
+function updateVR() {
 
     if(
         !renderer.xr.isPresenting
-    )
+    ) {
+        vrReady = false;
         return;
+    }
 
 
-    const left=
+    const left =
         new THREE.Vector3();
 
-    const right=
+    const right =
         new THREE.Vector3();
 
 
-    controllerL.getWorldPosition(
+    vrLeft.getWorldPosition(
         left
     );
 
-    controllerR.getWorldPosition(
+    vrRight.getWorldPosition(
         right
     );
 
 
-    if(!vrInitialized) {
+    if(!vrReady) {
 
-        previousControllerL.copy(
+        previousVRLeft.copy(
             left
         );
 
-        previousControllerR.copy(
+        previousVRRight.copy(
             right
         );
 
-        vrInitialized=true;
+        vrReady = true;
 
         return;
     }
 
 
-    const leftDelta=
+    const leftMovement =
         new THREE.Vector3()
         .subVectors(
             left,
-            previousControllerL
+            previousVRLeft
         );
 
-    const rightDelta=
+
+    const rightMovement =
         new THREE.Vector3()
         .subVectors(
             right,
-            previousControllerR
+            previousVRRight
         );
 
 
     /*
-      Moving a gripping hand backward
-      pushes the player forward.
+        Moving a gripping controller
+        pushes the body in the opposite
+        direction.
     */
 
     if(vrLeftGrip) {
 
-        velocity.sub(
-            leftDelta
-            .multiplyScalar(2.4)
+        velocity.addScaledVector(
+            leftMovement,
+            -2.7
         );
     }
 
 
     if(vrRightGrip) {
 
-        velocity.sub(
-            rightDelta
-            .multiplyScalar(2.4)
+        velocity.addScaledVector(
+            rightMovement,
+            -2.7
         );
     }
 
 
-    previousControllerL.copy(
+    previousVRLeft.copy(
         left
     );
 
-    previousControllerR.copy(
+    previousVRRight.copy(
         right
     );
 }
@@ -1559,13 +1706,15 @@ function updateCamera() {
 
     if(
         renderer.xr.isPresenting
-    )
+    ) {
         return;
+    }
 
-    player.rotation.y=
+
+    player.rotation.y =
         yaw;
 
-    camera.rotation.x=
+    camera.rotation.x =
         pitch;
 }
 
@@ -1588,22 +1737,24 @@ function respawn() {
         0
     );
 
-    yaw=0;
-    pitch=0;
+    yaw = 0;
+    pitch = 0;
 }
 
 
 // ============================================================
-// FALL DETECTION
+// FALL
 // ============================================================
 
 function checkFall() {
 
     if(
-        player.position.y<
+        player.position.y <
         -15
-    )
+    ) {
+
         respawn();
+    }
 }
 
 
@@ -1611,33 +1762,54 @@ function checkFall() {
 // BODY ANIMATION
 // ============================================================
 
-let time=0;
+let animationTime = 0;
 
 function animateBody(dt) {
 
-    time+=dt;
+    animationTime += dt;
 
 
-    const speed=
-        Math.sqrt(
-            velocity.x**2+
-            velocity.z**2
+    const speed =
+        Math.hypot(
+            velocity.x,
+            velocity.z
         );
 
 
-    if(speed>.7) {
+    if(
+        speed > .7
+    ) {
 
-        body.position.y=
-            -.45+
+        body.position.y =
+            -.45 +
             Math.sin(
-                time*10
-            )*.035;
-    }
-    else {
+                animationTime * 10
+            ) * .035;
 
-        body.position.y=
+    } else {
+
+        body.position.y =
             -.45;
     }
+}
+
+
+// ============================================================
+// RESET INPUT AFTER FRAME
+// ============================================================
+
+function resetMouseDelta() {
+
+    /*
+        Important bug fix:
+
+        Mouse movement is consumed once per
+        frame instead of repeatedly applying
+        the same movement.
+    */
+
+    mouseDX = 0;
+    mouseDY = 0;
 }
 
 
@@ -1647,10 +1819,10 @@ function animateBody(dt) {
 
 addEventListener(
     "resize",
-    ()=>{
+    () => {
 
-        camera.aspect=
-            innerWidth/
+        camera.aspect =
+            innerWidth /
             innerHeight;
 
         camera.updateProjectionMatrix();
@@ -1667,30 +1839,28 @@ addEventListener(
 // MAIN LOOP
 // ============================================================
 
-const clock=
+const clock =
     new THREE.Clock();
 
 
 function loop() {
 
-    const dt=
+    const dt =
         Math.min(
             clock.getDelta(),
             .033
         );
 
 
-    updateMouseHands(dt);
+    updateHands(dt);
 
-    mouseArmSwing();
+    applyHandMovement();
 
-    handLocomotion();
+    updateVR();
 
-    updateVR(dt);
+    updatePhysics(dt);
 
-    physics(dt);
-
-    collision();
+    resolveCollision();
 
     updateCamera();
 
@@ -1698,11 +1868,13 @@ function loop() {
 
     checkFall();
 
-
     renderer.render(
         scene,
         camera
     );
+
+
+    resetMouseDelta();
 }
 
 
