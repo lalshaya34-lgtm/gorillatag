@@ -2,26 +2,82 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Jungle Tag 2D</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jungle Monke 2D</title>
 <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <canvas id="game"></canvas>
 
 <div id="menu">
-    <h1>JUNGLE TAG</h1>
-    <p>Move your hands with the mouse</p>
-    <p>Push off surfaces to move</p>
-    <button id="start">PLAY</button>
+    <div class="logo">JUNGLE<br><span>MONKE</span></div>
+    <div class="subtitle">2D FAN GAME</div>
+    <button id="play">PLAY</button>
+</div>
+
+<div id="modMenu">
+    <div class="modHeader">
+        <span>MOD MENU</span>
+        <button id="closeMods">×</button>
+    </div>
+
+    <div class="modContent">
+
+        <button class="mod" data-mod="superJump">
+            <span>SUPER JUMP</span>
+            <b>OFF</b>
+        </button>
+
+        <button class="mod" data-mod="speed">
+            <span>SPEED</span>
+            <b>OFF</b>
+        </button>
+
+        <button class="mod" data-mod="lowGravity">
+            <span>LOW GRAVITY</span>
+            <b>OFF</b>
+        </button>
+
+        <button class="mod" data-mod="fly">
+            <span>FLY</span>
+            <b>OFF</b>
+        </button>
+
+        <button class="mod" data-mod="wallWalk">
+            <span>WALL WALK</span>
+            <b>OFF</b>
+        </button>
+
+        <button class="mod" data-mod="giantHands">
+            <span>GIANT HANDS</span>
+            <b>OFF</b>
+        </button>
+
+        <button class="mod" data-mod="rainbow">
+            <span>RAINBOW MONKE</span>
+            <b>OFF</b>
+        </button>
+
+        <button class="mod" data-mod="spin">
+            <span>SPIN</span>
+            <b>OFF</b>
+        </button>
+
+    </div>
+
+    <div class="modFooter">
+        Press <b>M</b> to toggle menu
+    </div>
 </div>
 
 <div id="hud">
-    <span id="status">READY</span>
-    <span id="timer">00:00</span>
+    <span id="speedText">SPEED: 0</span>
+    <span id="modText">M = MOD MENU</span>
 </div>
 
 <script src="game.js"></script>
+
 </body>
 </html>
