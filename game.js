@@ -1,50 +1,175 @@
 "use strict";
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+/* =========================================================
+   CANVAS
+========================================================= */
 
-const menu = document.getElementById("menu");
-const startButton = document.getElementById("start");
-const hud = document.getElementById("hud");
-const statusText = document.getElementById("status");
-const timerText = document.getElementById("timer");
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
 
 let W = innerWidth;
 let H = innerHeight;
-let playing = false;
-let gameStart = 0;
+
+function resize() {
+
+    W = innerWidth;
+    H = innerHeight;
+
+    const dpr =
+        Math.min(
+            devicePixelRatio || 1,
+            2
+        );
+
+    canvas.width =
+        W * dpr;
+
+    canvas.height =
+        H * dpr;
+
+    canvas.style.width =
+        W + "px";
+
+    canvas.style.height =
+        H + "px";
+
+    ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+    );
+
+    createWorld();
+}
+
+addEventListener(
+    "resize",
+    resize
+);
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+const keys = {};
 
 const mouse = {
     x: W / 2,
     y: H / 2
 };
 
-const keys = {};
+addEventListener(
+    "mousemove",
+    e => {
 
-let platforms = [];
-let trees = [];
-let rocks = [];
-let particles = [];
+        mouse.x =
+            e.clientX;
+
+        mouse.y =
+            e.clientY;
+    }
+);
+
+addEventListener(
+    "keydown",
+    e => {
+
+        keys[e.code] = true;
+
+        if (
+            e.code === "Space" ||
+            e.code === "ArrowUp"
+        ) {
+            e.preventDefault();
+        }
+
+        if (
+            e.code === "KeyM" &&
+            playing
+        ) {
+            toggleMenu();
+        }
+    }
+);
+
+addEventListener(
+    "keyup",
+    e => {
+
+        keys[e.code] = false;
+    }
+);
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let playing = false;
+
+const mods = {
+
+    superJump: false,
+
+    speed: false,
+
+    lowGravity: false,
+
+    fly: false,
+
+    wallWalk: false,
+
+    giantHands: false,
+
+    rainbow: false,
+
+    spin: false
+};
+
+
+/* =========================================================
+   PLAYER
+========================================================= */
 
 const player = {
+
     x: W / 2,
-    y: H - 150,
+
+    y: H - 140,
 
     vx: 0,
+
     vy: 0,
 
     radius: 31,
 
     grounded: false,
 
+    rotation: 0,
+
     color: "#704b31"
 };
 
+
+/* =========================================================
+   HANDS
+========================================================= */
+
 const leftHand = {
+
     x: W / 2 - 100,
+
     y: H / 2,
 
     previousX: W / 2 - 100,
+
     previousY: H / 2,
 
     radius: 18,
@@ -53,10 +178,13 @@ const leftHand = {
 };
 
 const rightHand = {
+
     x: W / 2 + 100,
+
     y: H / 2,
 
     previousX: W / 2 + 100,
+
     previousY: H / 2,
 
     radius: 18,
@@ -66,283 +194,309 @@ const rightHand = {
 
 
 /* =========================================================
-   RESIZE
-========================================================= */
-
-function resize() {
-
-    W = innerWidth;
-    H = innerHeight;
-
-    const dpr = Math.min(devicePixelRatio || 1, 2);
-
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-
-    canvas.style.width = W + "px";
-    canvas.style.height = H + "px";
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    buildWorld();
-}
-
-addEventListener("resize", resize);
-
-
-/* =========================================================
-   INPUT
-========================================================= */
-
-addEventListener("mousemove", e => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-});
-
-addEventListener("keydown", e => {
-    keys[e.code] = true;
-
-    if (
-        e.code === "Space" ||
-        e.code === "ArrowUp"
-    ) {
-        e.preventDefault();
-    }
-});
-
-addEventListener("keyup", e => {
-    keys[e.code] = false;
-});
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-}
-
-function distance(x1, y1, x2, y2) {
-    return Math.hypot(x2 - x1, y2 - y1);
-}
-
-function circleRect(circle, rect) {
-
-    const closestX = clamp(
-        circle.x,
-        rect.x,
-        rect.x + rect.w
-    );
-
-    const closestY = clamp(
-        circle.y,
-        rect.y,
-        rect.y + rect.h
-    );
-
-    const dx = circle.x - closestX;
-    const dy = circle.y - closestY;
-
-    return (
-        dx * dx +
-        dy * dy
-    ) <= circle.radius * circle.radius;
-}
-
-
-/* =========================================================
    WORLD
 ========================================================= */
 
-function buildWorld() {
+let platforms = [];
+
+let trees = [];
+
+let vines = [];
+
+let particles = [];
+
+function createWorld() {
 
     platforms = [
+
         {
-            x: -50,
+            x: -100,
             y: H - 60,
-            w: W + 100,
-            h: 60,
-            type: "ground"
+            w: W + 200,
+            h: 60
         },
 
         {
-            x: 40,
+            x: 30,
             y: H - 260,
-            w: 270,
-            h: 30,
-            type: "rock"
+            w: 280,
+            h: 32
         },
 
         {
             x: W - 310,
-            y: H - 330,
-            w: 270,
-            h: 30,
-            type: "rock"
-        },
-
-        {
-            x: W / 2 - 140,
-            y: H - 460,
+            y: H - 335,
             w: 280,
-            h: 30,
-            type: "rock"
+            h: 32
         },
 
         {
-            x: W / 2 - 410,
+            x: W / 2 - 150,
+            y: H - 460,
+            w: 300,
+            h: 32
+        },
+
+        {
+            x: W / 2 - 430,
             y: H - 590,
-            w: 180,
-            h: 30,
-            type: "rock"
+            w: 190,
+            h: 32
         },
 
         {
-            x: W / 2 + 230,
-            y: H - 630,
-            w: 180,
-            h: 30,
-            type: "rock"
+            x: W / 2 + 240,
+            y: H - 640,
+            w: 190,
+            h: 32
         }
     ];
 
     trees = [
-        { x: 75, y: H - 60, height: 360 },
-        { x: W - 75, y: H - 60, height: 420 },
-        { x: W / 2 - 400, y: H - 60, height: 300 },
-        { x: W / 2 + 400, y: H - 60, height: 340 }
+
+        {
+            x: 75,
+            height: 370
+        },
+
+        {
+            x: W - 75,
+            height: 430
+        },
+
+        {
+            x: W / 2 - 400,
+            height: 300
+        },
+
+        {
+            x: W / 2 + 400,
+            height: 340
+        }
     ];
 
-    rocks = [];
+    vines = [];
 
-    for (let i = 0; i < 18; i++) {
+    for (
+        let i = 0;
+        i < 12;
+        i++
+    ) {
 
-        rocks.push({
-            x: Math.random() * W,
-            y: H - 80 - Math.random() * 80,
-            size: 8 + Math.random() * 22
+        vines.push({
+
+            x:
+                Math.random() *
+                W,
+
+            height:
+                70 +
+                Math.random() *
+                170
         });
     }
 }
 
 
 /* =========================================================
-   RESET
+   MATH
 ========================================================= */
 
-function resetPlayer() {
+function clamp(
+    value,
+    min,
+    max
+) {
 
-    player.x = W / 2;
-    player.y = H - 140;
+    return Math.max(
+        min,
+        Math.min(max,value)
+    );
+}
 
-    player.vx = 0;
-    player.vy = 0;
+function circleRect(
+    circle,
+    rect
+) {
 
-    player.grounded = false;
+    const x =
+        clamp(
+            circle.x,
+            rect.x,
+            rect.x + rect.w
+        );
 
-    leftHand.x = W / 2 - 100;
-    leftHand.y = H / 2;
+    const y =
+        clamp(
+            circle.y,
+            rect.y,
+            rect.y + rect.h
+        );
 
-    rightHand.x = W / 2 + 100;
-    rightHand.y = H / 2;
+    const dx =
+        circle.x - x;
 
-    leftHand.previousX = leftHand.x;
-    leftHand.previousY = leftHand.y;
+    const dy =
+        circle.y - y;
 
-    rightHand.previousX = rightHand.x;
-    rightHand.previousY = rightHand.y;
-
-    particles = [];
+    return (
+        dx * dx +
+        dy * dy
+    ) <=
+    circle.radius *
+    circle.radius;
 }
 
 
 /* =========================================================
-   HAND FOLLOWING
+   HAND MOVEMENT
 ========================================================= */
 
-function updateHand(hand, offset) {
+function updateHand(
+    hand,
+    offset
+) {
 
-    hand.previousX = hand.x;
-    hand.previousY = hand.y;
+    hand.previousX =
+        hand.x;
 
-    const targetX = mouse.x + offset;
-    const targetY = mouse.y;
+    hand.previousY =
+        hand.y;
+
+    const targetX =
+        mouse.x + offset;
+
+    const targetY =
+        mouse.y;
+
+    /*
+       Giant hands modifier.
+    */
+
+    hand.radius =
+        mods.giantHands
+            ? 32
+            : 18;
+
+    /*
+       Smooth mouse tracking.
+    */
 
     hand.x +=
-        (targetX - hand.x) * 0.92;
+        (
+            targetX -
+            hand.x
+        ) * .92;
 
     hand.y +=
-        (targetY - hand.y) * 0.92;
+        (
+            targetY -
+            hand.y
+        ) * .92;
 
-    hand.x = clamp(
-        hand.x,
-        hand.radius,
-        W - hand.radius
-    );
+    hand.x =
+        clamp(
+            hand.x,
+            hand.radius,
+            W - hand.radius
+        );
 
-    hand.y = clamp(
-        hand.y,
-        hand.radius,
-        H - hand.radius
-    );
+    hand.y =
+        clamp(
+            hand.y,
+            hand.radius,
+            H - hand.radius
+        );
 }
 
 
 /* =========================================================
-   HAND PHYSICS
+   HAND PROPULSION
 ========================================================= */
 
-function handPhysics(hand) {
+function handPhysics(
+    hand
+) {
 
-    hand.touching = false;
+    hand.touching =
+        false;
 
-    for (const p of platforms) {
+    for (
+        const p of platforms
+    ) {
 
-        if (!circleRect(hand, p))
+        if (
+            !circleRect(
+                hand,
+                p
+            )
+        ) {
             continue;
+        }
 
-        hand.touching = true;
+        hand.touching =
+            true;
 
         const dx =
-            hand.x - hand.previousX;
+            hand.x -
+            hand.previousX;
 
         const dy =
-            hand.y - hand.previousY;
+            hand.y -
+            hand.previousY;
+
+        let power =
+            mods.speed
+                ? 1.25
+                : .82;
 
         /*
-          Push the gorilla opposite
-          the direction of hand movement.
+          Push body opposite
+          hand movement.
         */
 
-        player.vx -= dx * 0.9;
-        player.vy -= dy * 0.9;
+        player.vx -=
+            dx * power;
+
+        player.vy -=
+            dy * power;
 
         /*
-          Find nearest point.
+          Find nearest surface.
         */
 
-        const cx = clamp(
-            hand.x,
-            p.x,
-            p.x + p.w
-        );
+        const cx =
+            clamp(
+                hand.x,
+                p.x,
+                p.x + p.w
+            );
 
-        const cy = clamp(
-            hand.y,
-            p.y,
-            p.y + p.h
-        );
+        const cy =
+            clamp(
+                hand.y,
+                p.y,
+                p.y + p.h
+            );
 
-        let nx = hand.x - cx;
-        let ny = hand.y - cy;
+        let nx =
+            hand.x - cx;
 
-        const len = Math.hypot(nx, ny);
+        let ny =
+            hand.y - cy;
 
-        if (len > 0.001) {
+        const length =
+            Math.hypot(
+                nx,
+                ny
+            );
 
-            nx /= len;
-            ny /= len;
+        if (
+            length > .001
+        ) {
+
+            nx /= length;
+            ny /= length;
 
         } else {
 
@@ -351,62 +505,107 @@ function handPhysics(hand) {
         }
 
         /*
-          Prevent the hand from
-          getting trapped inside.
+          Remove hand from surface.
         */
 
         hand.x =
-            cx + nx * (hand.radius + 1);
+            cx +
+            nx *
+            (hand.radius + 1);
 
         hand.y =
-            cy + ny * (hand.radius + 1);
+            cy +
+            ny *
+            (hand.radius + 1);
 
         /*
-          Create little dirt particles.
+          Dust.
         */
 
         if (
             Math.abs(dx) +
-            Math.abs(dy) > 4
+            Math.abs(dy) > 5
         ) {
-            createDust(hand.x, hand.y);
+
+            for (
+                let i=0;
+                i<2;
+                i++
+            ) {
+                dust(
+                    hand.x,
+                    hand.y
+                );
+            }
         }
     }
-
-    player.vx = clamp(
-        player.vx,
-        -22,
-        22
-    );
-
-    player.vy = clamp(
-        player.vy,
-        -24,
-        24
-    );
 }
 
 
 /* =========================================================
-   PLAYER PHYSICS
+   PLAYER
 ========================================================= */
 
 function updatePlayer() {
 
-    const oldX = player.x;
-    const oldY = player.y;
-
-    player.vy += 0.52;
-
     /*
-      Tiny keyboard assistance.
+      Gravity.
     */
 
-    if (keys.KeyA || keys.ArrowLeft)
-        player.vx -= 0.12;
+    let gravity =
+        mods.lowGravity
+            ? .16
+            : .52;
 
-    if (keys.KeyD || keys.ArrowRight)
-        player.vx += 0.12;
+    if (
+        !mods.fly
+    ) {
+        player.vy += gravity;
+    }
+
+    /*
+      Keyboard movement.
+    */
+
+    let movement =
+        mods.speed
+            ? .35
+            : .14;
+
+    if (
+        keys.KeyA ||
+        keys.ArrowLeft
+    ) {
+        player.vx -= movement;
+    }
+
+    if (
+        keys.KeyD ||
+        keys.ArrowRight
+    ) {
+        player.vx += movement;
+    }
+
+    /*
+      Fly mode.
+    */
+
+    if (mods.fly) {
+
+        if (
+            keys.KeyW ||
+            keys.ArrowUp
+        ) {
+            player.vy -= .45;
+        }
+
+        if (
+            keys.KeyS ||
+            keys.ArrowDown
+        ) {
+            player.vy += .45;
+        }
+    }
 
     /*
       Jump.
@@ -420,80 +619,147 @@ function updatePlayer() {
         ) &&
         player.grounded
     ) {
-        player.vy = -12;
-        player.grounded = false;
 
-        for (let i = 0; i < 10; i++) {
-            createDust(
+        player.vy =
+            mods.superJump
+                ? -20
+                : -11.5;
+
+        player.grounded =
+            false;
+
+        for (
+            let i=0;
+            i<12;
+            i++
+        ) {
+            dust(
                 player.x +
-                (Math.random() - .5) * 50,
+                (
+                    Math.random() -
+                    .5
+                ) * 55,
+
                 player.y + 30
             );
         }
     }
 
-    player.vx = clamp(
-        player.vx,
-        -22,
-        22
-    );
-
-    player.vy = clamp(
-        player.vy,
-        -25,
-        25
-    );
-
-    player.x += player.vx;
-    player.y += player.vy;
-
-    player.grounded = false;
-
     /*
-      Platforms.
+      Spin.
     */
 
-    for (const p of platforms) {
+    if (mods.spin) {
 
-        if (!circleRect(player, p))
+        player.rotation +=
+            .12;
+    } else {
+
+        player.rotation *=
+            .85;
+    }
+
+    /*
+      Velocity.
+    */
+
+    const maxSpeed =
+        mods.speed
+            ? 32
+            : 22;
+
+    player.vx =
+        clamp(
+            player.vx,
+            -maxSpeed,
+            maxSpeed
+        );
+
+    player.vy =
+        clamp(
+            player.vy,
+            -28,
+            28
+        );
+
+    const oldX =
+        player.x;
+
+    const oldY =
+        player.y;
+
+    player.x +=
+        player.vx;
+
+    player.y +=
+        player.vy;
+
+    player.grounded =
+        false;
+
+    /*
+      Platform collisions.
+    */
+
+    for (
+        const p of platforms
+    ) {
+
+        if (
+            !circleRect(
+                player,
+                p
+            )
+        ) {
             continue;
+        }
 
         const oldBottom =
-            oldY + player.radius;
+            oldY +
+            player.radius;
 
         const oldTop =
-            oldY - player.radius;
+            oldY -
+            player.radius;
 
         const oldRight =
-            oldX + player.radius;
+            oldX +
+            player.radius;
 
         const oldLeft =
-            oldX - player.radius;
+            oldX -
+            player.radius;
 
         /*
-          Landing.
+          Top.
         */
 
         if (
             player.vy >= 0 &&
-            oldBottom <= p.y + 8
+            oldBottom <=
+                p.y + 8
         ) {
 
             player.y =
-                p.y - player.radius;
+                p.y -
+                player.radius;
 
-            player.vy = 0;
+            player.vy =
+                0;
 
-            player.grounded = true;
+            player.grounded =
+                true;
         }
 
         /*
-          Ceiling.
+          Bottom.
         */
 
         else if (
             player.vy < 0 &&
-            oldTop >= p.y + p.h - 8
+            oldTop >=
+                p.y +
+                p.h - 8
         ) {
 
             player.y =
@@ -501,7 +767,8 @@ function updatePlayer() {
                 p.h +
                 player.radius;
 
-            player.vy = 0;
+            player.vy =
+                0;
         }
 
         /*
@@ -510,18 +777,27 @@ function updatePlayer() {
 
         else if (
             player.vx > 0 &&
-            oldRight <= p.x + 8
+            oldRight <=
+                p.x + 8
         ) {
 
             player.x =
-                p.x - player.radius;
+                p.x -
+                player.radius;
 
-            player.vx = 0;
+            if (
+                !mods.wallWalk
+            ) {
+                player.vx =
+                    0;
+            }
         }
 
         else if (
             player.vx < 0 &&
-            oldLeft >= p.x + p.w - 8
+            oldLeft >=
+                p.x +
+                p.w - 8
         ) {
 
             player.x =
@@ -529,7 +805,28 @@ function updatePlayer() {
                 p.w +
                 player.radius;
 
-            player.vx = 0;
+            if (
+                !mods.wallWalk
+            ) {
+                player.vx =
+                    0;
+            }
+        }
+    }
+
+    /*
+      Wall walk.
+    */
+
+    if (
+        mods.wallWalk
+    ) {
+
+        if (
+            keys.KeyW ||
+            keys.ArrowUp
+        ) {
+            player.vy -= .3;
         }
     }
 
@@ -537,34 +834,62 @@ function updatePlayer() {
       Friction.
     */
 
-    if (player.grounded)
-        player.vx *= 0.82;
-    else
-        player.vx *= 0.994;
+    if (
+        player.grounded
+    ) {
 
-    /*
-      Boundaries.
-    */
+        player.vx *=
+            .80;
 
-    if (player.x < player.radius) {
+    } else {
 
-        player.x = player.radius;
-        player.vx *= -0.25;
+        player.vx *=
+            .995;
     }
 
-    if (player.x > W - player.radius) {
+    /*
+      Screen boundaries.
+    */
+
+    if (
+        player.x <
+        player.radius
+    ) {
 
         player.x =
-            W - player.radius;
+            player.radius;
 
-        player.vx *= -0.25;
+        player.vx =
+            Math.abs(
+                player.vx
+            ) * .3;
+    }
+
+    if (
+        player.x >
+        W -
+        player.radius
+    ) {
+
+        player.x =
+            W -
+            player.radius;
+
+        player.vx =
+            -Math.abs(
+                player.vx
+            ) * .3;
     }
 
     /*
       Respawn.
     */
 
-    if (player.y > H + 300) {
+    if (
+        player.y >
+        H + 300
+    ) {
+
         resetPlayer();
     }
 }
@@ -574,17 +899,28 @@ function updatePlayer() {
    PARTICLES
 ========================================================= */
 
-function createDust(x, y) {
+function dust(x,y){
 
-    if (particles.length > 160)
+    if (
+        particles.length >
+        180
+    ) {
         return;
+    }
 
     particles.push({
+
         x,
         y,
 
-        vx: (Math.random() - .5) * 2,
-        vy: -Math.random() * 2,
+        vx:
+            (
+                Math.random() -
+                .5
+            ) * 2.5,
+
+        vy:
+            -Math.random() * 2.5,
 
         life: 1,
 
@@ -594,31 +930,38 @@ function createDust(x, y) {
     });
 }
 
-function updateParticles() {
+function updateParticles(){
 
-    for (const p of particles) {
+    for (
+        const p of particles
+    ) {
 
         p.x += p.vx;
         p.y += p.vy;
 
-        p.vy += .04;
+        p.vy += .05;
 
         p.life -= .035;
     }
 
     particles =
         particles.filter(
-            p => p.life > 0
+            p =>
+                p.life > 0
         );
 }
 
-function drawParticles() {
+function drawParticles(){
 
-    for (const p of particles) {
+    for (
+        const p of particles
+    ) {
 
-        ctx.globalAlpha = p.life;
+        ctx.globalAlpha =
+            p.life;
 
-        ctx.fillStyle = "#b08a5b";
+        ctx.fillStyle =
+            "#b18b61";
 
         ctx.beginPath();
 
@@ -641,9 +984,9 @@ function drawParticles() {
    BACKGROUND
 ========================================================= */
 
-function drawBackground() {
+function drawBackground(){
 
-    const gradient =
+    const sky =
         ctx.createLinearGradient(
             0,
             0,
@@ -651,22 +994,23 @@ function drawBackground() {
             H
         );
 
-    gradient.addColorStop(
+    sky.addColorStop(
         0,
-        "#61c5e5"
+        "#55bfe5"
     );
 
-    gradient.addColorStop(
-        .5,
-        "#91d96b"
+    sky.addColorStop(
+        .55,
+        "#88d365"
     );
 
-    gradient.addColorStop(
+    sky.addColorStop(
         1,
-        "#3f913b"
+        "#438f3b"
     );
 
-    ctx.fillStyle = gradient;
+    ctx.fillStyle =
+        sky;
 
     ctx.fillRect(
         0,
@@ -676,54 +1020,93 @@ function drawBackground() {
     );
 
     /*
-      Far jungle.
+      Distant mountains.
     */
 
     ctx.fillStyle =
-        "rgba(26,105,43,.35)";
+        "rgba(35,100,45,.28)";
 
-    for (let i = 0; i < 14; i++) {
+    ctx.beginPath();
 
-        const x =
-            i * 100;
+    ctx.moveTo(
+        0,
+        H - 180
+    );
 
-        const h =
-            100 + (i % 4) * 35;
+    for (
+        let x=0;
+        x<=W;
+        x+=100
+    ) {
 
-        ctx.beginPath();
+        const y =
+            H -
+            170 -
+            Math.sin(
+                x * .01
+            ) * 50;
 
-        ctx.arc(
+        ctx.lineTo(
             x,
-            H - 50 - h,
-            70,
-            0,
-            Math.PI * 2
+            y
         );
-
-        ctx.fill();
     }
+
+    ctx.lineTo(
+        W,
+        H
+    );
+
+    ctx.lineTo(
+        0,
+        H
+    );
+
+    ctx.fill();
 
     /*
       Clouds.
     */
 
     ctx.fillStyle =
-        "rgba(255,255,255,.5)";
+        "rgba(255,255,255,.45)";
 
-    const cloudPositions = [
-        [100, 80],
-        [420, 135],
-        [760, 75],
-        [W - 150, 120]
+    const clouds=[
+        [120,90],
+        [440,140],
+        [780,80],
+        [W-170,135]
     ];
 
-    for (const [x, y] of cloudPositions) {
+    for (
+        const [x,y] of clouds
+    ) {
 
         ctx.beginPath();
 
-        ctx.arc(x, y, 25, 0, Math.PI * 2);
-        ctx.arc(x + 35, y - 12, 35, 0, Math.PI * 2);
-        ctx.arc(x + 75, y, 25, 0, Math.PI * 2);
+        ctx.arc(
+            x,
+            y,
+            25,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.arc(
+            x+35,
+            y-12,
+            35,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.arc(
+            x+72,
+            y,
+            25,
+            0,
+            Math.PI * 2
+        );
 
         ctx.fill();
     }
@@ -734,23 +1117,41 @@ function drawBackground() {
    TREES
 ========================================================= */
 
-function drawTrees() {
+function drawTrees(){
 
-    for (const tree of trees) {
+    for (
+        const tree of trees
+    ) {
 
         const top =
-            tree.y - tree.height;
+            tree.y -
+            tree.height;
+
+        /*
+          Trunk shadow.
+        */
+
+        ctx.fillStyle =
+            "#3d2818";
+
+        ctx.fillRect(
+            tree.x - 20,
+            top,
+            40,
+            tree.height
+        );
 
         /*
           Trunk.
         */
 
-        ctx.fillStyle = "#54351e";
+        ctx.fillStyle =
+            "#63401f";
 
         ctx.fillRect(
-            tree.x - 18,
+            tree.x - 15,
             top,
-            36,
+            30,
             tree.height
         );
 
@@ -758,30 +1159,38 @@ function drawTrees() {
           Branches.
         */
 
-        ctx.strokeStyle = "#4a2f1b";
+        ctx.strokeStyle =
+            "#52331c";
+
         ctx.lineWidth = 14;
-        ctx.lineCap = "round";
+
+        ctx.lineCap =
+            "round";
 
         ctx.beginPath();
 
         ctx.moveTo(
             tree.x,
-            top + tree.height * .4
+            top +
+            tree.height*.45
         );
 
         ctx.lineTo(
-            tree.x - 80,
-            top + tree.height * .2
+            tree.x-85,
+            top +
+            tree.height*.2
         );
 
         ctx.moveTo(
             tree.x,
-            top + tree.height * .55
+            top +
+            tree.height*.55
         );
 
         ctx.lineTo(
-            tree.x + 80,
-            top + tree.height * .3
+            tree.x+85,
+            top +
+            tree.height*.28
         );
 
         ctx.stroke();
@@ -790,29 +1199,32 @@ function drawTrees() {
           Leaves.
         */
 
-        const leaves = [
-            [-65, 45, 55],
-            [0, 15, 65],
-            [65, 45, 55],
-            [-35, -25, 48],
-            [35, -30, 52]
+        const leaves=[
+            [-70,45,60],
+            [0,25,70],
+            [70,45,60],
+            [-35,-20,52],
+            [40,-25,55]
         ];
 
-        for (const [ox, oy, size] of leaves) {
+        for (
+            const [ox,oy,size]
+            of leaves
+        ) {
 
             ctx.fillStyle =
-                Math.random() > .5
-                    ? "#237a38"
-                    : "#2d873d";
+                Math.random()>.5
+                    ? "#237b37"
+                    : "#2d893e";
 
             ctx.beginPath();
 
             ctx.arc(
-                tree.x + ox,
-                top + 70 + oy,
+                tree.x+ox,
+                top+70+oy,
                 size,
                 0,
-                Math.PI * 2
+                Math.PI*2
             );
 
             ctx.fill();
@@ -822,22 +1234,61 @@ function drawTrees() {
 
 
 /* =========================================================
+   VINES
+========================================================= */
+
+function drawVines(){
+
+    ctx.strokeStyle =
+        "rgba(30,105,45,.7)";
+
+    ctx.lineWidth = 5;
+
+    for (
+        const vine of vines
+    ) {
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            vine.x,
+            0
+        );
+
+        ctx.bezierCurveTo(
+            vine.x-30,
+            vine.height*.3,
+            vine.x+30,
+            vine.height*.65,
+            vine.x,
+            vine.height
+        );
+
+        ctx.stroke();
+    }
+}
+
+
+/* =========================================================
    PLATFORMS
 ========================================================= */
 
-function drawPlatforms() {
+function drawPlatforms(){
 
-    for (const p of platforms) {
+    for (
+        const p of platforms
+    ) {
 
         /*
           Shadow.
         */
 
-        ctx.fillStyle = "#39271a";
+        ctx.fillStyle =
+            "#392619";
 
         ctx.fillRect(
             p.x,
-            p.y + 8,
+            p.y+9,
             p.w,
             p.h
         );
@@ -847,9 +1298,7 @@ function drawPlatforms() {
         */
 
         ctx.fillStyle =
-            p.type === "ground"
-                ? "#624329"
-                : "#695039";
+            "#655039";
 
         ctx.beginPath();
 
@@ -858,16 +1307,17 @@ function drawPlatforms() {
             p.y,
             p.w,
             p.h,
-            8
+            9
         );
 
         ctx.fill();
 
         /*
-          Grass top.
+          Grass.
         */
 
-        ctx.fillStyle = "#348c3d";
+        ctx.fillStyle =
+            "#348c3d";
 
         ctx.beginPath();
 
@@ -875,36 +1325,25 @@ function drawPlatforms() {
             p.x,
             p.y,
             p.w,
-            10,
-            7
+            11,
+            8
         );
 
         ctx.fill();
-    }
-}
 
+        /*
+          Rock details.
+        */
 
-/* =========================================================
-   SMALL ROCKS
-========================================================= */
+        ctx.fillStyle =
+            "rgba(255,255,255,.08)";
 
-function drawRocks() {
-
-    ctx.fillStyle = "#557047";
-
-    for (const rock of rocks) {
-
-        ctx.beginPath();
-
-        ctx.arc(
-            rock.x,
-            rock.y,
-            rock.size,
-            0,
-            Math.PI * 2
+        ctx.fillRect(
+            p.x+20,
+            p.y+16,
+            p.w*.25,
+            4
         );
-
-        ctx.fill();
     }
 }
 
@@ -913,22 +1352,31 @@ function drawRocks() {
    ARMS
 ========================================================= */
 
-function drawArm(hand) {
+function drawArm(hand){
 
-    const sx = player.x;
-    const sy = player.y;
+    const sx =
+        player.x;
+
+    const sy =
+        player.y;
 
     const dx =
-        hand.x - sx;
+        hand.x-sx;
 
     const dy =
-        hand.y - sy;
+        hand.y-sy;
 
     const length =
-        Math.hypot(dx, dy);
+        Math.hypot(
+            dx,
+            dy
+        );
 
     const angle =
-        Math.atan2(dy, dx);
+        Math.atan2(
+            dy,
+            dx
+        );
 
     ctx.save();
 
@@ -937,57 +1385,77 @@ function drawArm(hand) {
         sy
     );
 
-    ctx.rotate(angle);
-
-    /*
-      Thick outline.
-    */
-
-    ctx.fillStyle = "#382419";
-
-    ctx.beginPath();
-
-    ctx.roundRect(
-        0,
-        -16,
-        length,
-        32,
-        16
+    ctx.rotate(
+        angle
     );
 
-    ctx.fill();
-
     /*
-      Arm.
-    */
-
-    ctx.fillStyle = "#704b31";
-
-    ctx.beginPath();
-
-    ctx.roundRect(
-        0,
-        -11,
-        length,
-        22,
-        11
-    );
-
-    ctx.fill();
-
-    /*
-      Arm highlight.
+      Outer arm.
     */
 
     ctx.fillStyle =
-        "rgba(255,255,255,.08)";
+        "#362218";
 
     ctx.beginPath();
 
     ctx.roundRect(
-        8,
+        0,
+        -18,
+        length,
+        36,
+        18
+    );
+
+    ctx.fill();
+
+    /*
+      Main arm.
+    */
+
+    let color =
+        player.color;
+
+    if (
+        mods.rainbow
+    ) {
+
+        color =
+            `hsl(${(
+                performance.now()/4
+            )%360},70%,45%)`;
+    }
+
+    ctx.fillStyle =
+        color;
+
+    ctx.beginPath();
+
+    ctx.roundRect(
+        0,
+        -12,
+        length,
+        24,
+        12
+    );
+
+    ctx.fill();
+
+    /*
+      Highlight.
+    */
+
+    ctx.fillStyle =
+        "rgba(255,255,255,.1)";
+
+    ctx.beginPath();
+
+    ctx.roundRect(
+        10,
         -8,
-        Math.max(0, length - 16),
+        Math.max(
+            0,
+            length-20
+        ),
         5,
         3
     );
@@ -1002,24 +1470,36 @@ function drawArm(hand) {
    GORILLA
 ========================================================= */
 
-function drawGorilla() {
+function drawGorilla(){
+
+    ctx.save();
+
+    ctx.translate(
+        player.x,
+        player.y
+    );
+
+    ctx.rotate(
+        player.rotation
+    );
 
     /*
       Body outline.
     */
 
-    ctx.fillStyle = "#382419";
+    ctx.fillStyle =
+        "#352217";
 
     ctx.beginPath();
 
     ctx.ellipse(
-        player.x,
-        player.y,
-        47,
-        55,
         0,
         0,
-        Math.PI * 2
+        48,
+        57,
+        0,
+        0,
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1028,18 +1508,19 @@ function drawGorilla() {
       Body.
     */
 
-    ctx.fillStyle = "#704b31";
+    ctx.fillStyle =
+        player.color;
 
     ctx.beginPath();
 
     ctx.ellipse(
-        player.x,
-        player.y,
-        40,
-        48,
         0,
         0,
-        Math.PI * 2
+        41,
+        50,
+        0,
+        0,
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1048,36 +1529,19 @@ function drawGorilla() {
       Chest.
     */
 
-    ctx.fillStyle = "#5c3c27";
+    ctx.fillStyle =
+        "#593a26";
 
     ctx.beginPath();
 
     ctx.ellipse(
-        player.x,
-        player.y + 8,
-        25,
-        30,
+        0,
+        9,
+        26,
+        31,
         0,
         0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-    /*
-      Head outline.
-    */
-
-    ctx.fillStyle = "#382419";
-
-    ctx.beginPath();
-
-    ctx.arc(
-        player.x,
-        player.y - 48,
-        39,
-        0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1086,16 +1550,32 @@ function drawGorilla() {
       Head.
     */
 
-    ctx.fillStyle = "#704b31";
+    ctx.fillStyle =
+        "#352217";
 
     ctx.beginPath();
 
     ctx.arc(
-        player.x,
-        player.y - 48,
+        0,
+        -49,
+        40,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.fillStyle =
+        player.color;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        0,
+        -49,
         33,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1104,24 +1584,25 @@ function drawGorilla() {
       Ears.
     */
 
-    ctx.fillStyle = "#513522";
+    ctx.fillStyle =
+        "#4c311f";
 
     ctx.beginPath();
 
     ctx.arc(
-        player.x - 33,
-        player.y - 48,
-        14,
+        -34,
+        -49,
+        15,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.arc(
-        player.x + 33,
-        player.y - 48,
-        14,
+        34,
+        -49,
+        15,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1130,59 +1611,62 @@ function drawGorilla() {
       Brow.
     */
 
-    ctx.fillStyle = "#4b301f";
+    ctx.fillStyle =
+        "#492f1e";
 
     ctx.fillRect(
-        player.x - 25,
-        player.y - 64,
-        50,
-        9
+        -26,
+        -66,
+        52,
+        10
     );
 
     /*
       Eyes.
     */
 
-    ctx.fillStyle = "#f0ead8";
+    ctx.fillStyle =
+        "#f0ead7";
 
     ctx.beginPath();
 
     ctx.arc(
-        player.x - 12,
-        player.y - 55,
+        -12,
+        -56,
         7,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.arc(
-        player.x + 12,
-        player.y - 55,
+        12,
+        -56,
         7,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.fill();
 
-    ctx.fillStyle = "#111";
+    ctx.fillStyle =
+        "#111";
 
     ctx.beginPath();
 
     ctx.arc(
-        player.x - 12,
-        player.y - 55,
+        -12,
+        -56,
         3,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.arc(
-        player.x + 12,
-        player.y - 55,
+        12,
+        -56,
         3,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1191,18 +1675,19 @@ function drawGorilla() {
       Muzzle.
     */
 
-    ctx.fillStyle = "#4c3221";
+    ctx.fillStyle =
+        "#4a3020";
 
     ctx.beginPath();
 
     ctx.ellipse(
-        player.x,
-        player.y - 37,
+        0,
+        -38,
         17,
         12,
         0,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1211,18 +1696,19 @@ function drawGorilla() {
       Nose.
     */
 
-    ctx.fillStyle = "#21150d";
+    ctx.fillStyle =
+        "#1d120b";
 
     ctx.beginPath();
 
     ctx.ellipse(
-        player.x,
-        player.y - 40,
+        0,
+        -41,
         9,
         6,
         0,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1231,43 +1717,48 @@ function drawGorilla() {
       Mouth.
     */
 
-    ctx.strokeStyle = "#21150d";
+    ctx.strokeStyle =
+        "#1d120b";
+
     ctx.lineWidth = 4;
 
     ctx.beginPath();
 
     ctx.arc(
-        player.x,
-        player.y - 31,
+        0,
+        -31,
         11,
         .1,
-        Math.PI - .1
+        Math.PI-.1
     );
 
     ctx.stroke();
+
+    ctx.restore();
 }
 
 
 /* =========================================================
-   HANDS
+   HAND
 ========================================================= */
 
-function drawHand(hand) {
+function drawHand(hand){
 
     /*
-      Shadow.
+      Outer hand.
     */
 
-    ctx.fillStyle = "#382419";
+    ctx.fillStyle =
+        "#352217";
 
     ctx.beginPath();
 
     ctx.arc(
         hand.x,
         hand.y,
-        hand.radius + 5,
+        hand.radius+5,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1276,7 +1767,21 @@ function drawHand(hand) {
       Palm.
     */
 
-    ctx.fillStyle = "#704b31";
+    let color =
+        player.color;
+
+    if (
+        mods.rainbow
+    ) {
+
+        color =
+            `hsl(${(
+                performance.now()/4
+            )%360},70%,45%)`;
+    }
+
+    ctx.fillStyle =
+        color;
 
     ctx.beginPath();
 
@@ -1285,7 +1790,7 @@ function drawHand(hand) {
         hand.y,
         hand.radius,
         0,
-        Math.PI * 2
+        Math.PI*2
     );
 
     ctx.fill();
@@ -1294,22 +1799,31 @@ function drawHand(hand) {
       Fingers.
     */
 
-    ctx.strokeStyle = "#3d281b";
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
+    ctx.strokeStyle =
+        "#3c281a";
 
-    for (let i = -1; i <= 1; i++) {
+    ctx.lineWidth = 3;
+
+    ctx.lineCap =
+        "round";
+
+    for (
+        let i=-1;
+        i<=1;
+        i++
+    ) {
 
         ctx.beginPath();
 
         ctx.moveTo(
-            hand.x + i * 5,
-            hand.y + 4
+            hand.x+i*6,
+            hand.y+3
         );
 
         ctx.lineTo(
-            hand.x + i * 6,
-            hand.y + 14
+            hand.x+i*7,
+            hand.y+
+            hand.radius*.75
         );
 
         ctx.stroke();
@@ -1321,129 +1835,162 @@ function drawHand(hand) {
    CURSOR
 ========================================================= */
 
-function drawCursor() {
+function drawCursor(){
 
     ctx.strokeStyle =
-        "rgba(255,255,255,.9)";
+        "white";
 
     ctx.lineWidth = 2;
 
     ctx.beginPath();
 
     ctx.moveTo(
-        mouse.x - 9,
+        mouse.x-10,
         mouse.y
     );
 
     ctx.lineTo(
-        mouse.x + 9,
+        mouse.x+10,
         mouse.y
     );
 
     ctx.moveTo(
         mouse.x,
-        mouse.y - 9
+        mouse.y-10
     );
 
     ctx.lineTo(
         mouse.x,
-        mouse.y + 9
+        mouse.y+10
     );
 
     ctx.stroke();
+
+    ctx.fillStyle =
+        "rgba(255,255,255,.25)";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        mouse.x,
+        mouse.y,
+        3,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
 }
 
 
 /* =========================================================
-   GAME UPDATE
+   HUD
 ========================================================= */
 
-function update() {
+function drawHUD(){
 
-    updatePlayer();
+    const speed =
+        Math.round(
+            Math.hypot(
+                player.vx,
+                player.vy
+            )
+        );
 
-    updateHand(leftHand, -24);
-    updateHand(rightHand, 24);
-
-    handPhysics(leftHand);
-    handPhysics(rightHand);
-
-    updateParticles();
-
-    if (playing) {
-
-        const elapsed =
-            Math.floor(
-                (performance.now() - gameStart) /
-                1000
-            );
-
-        const minutes =
-            String(
-                Math.floor(elapsed / 60)
-            ).padStart(2, "0");
-
-        const seconds =
-            String(
-                elapsed % 60
-            ).padStart(2, "0");
-
-        timerText.textContent =
-            minutes + ":" + seconds;
-    }
+    document.getElementById(
+        "speedText"
+    ).textContent =
+        "SPEED: " + speed;
 }
 
 
 /* =========================================================
-   DRAW
+   MOD MENU
 ========================================================= */
 
-function draw() {
+const modMenu =
+    document.getElementById(
+        "modMenu"
+    );
 
-    drawBackground();
+function toggleMenu(){
 
-    drawTrees();
-
-    drawRocks();
-
-    drawPlatforms();
-
-    /*
-      Arms behind the body.
-    */
-
-    drawArm(leftHand);
-    drawArm(rightHand);
-
-    /*
-      Gorilla.
-    */
-
-    drawGorilla();
-
-    /*
-      Hands in front.
-    */
-
-    drawHand(leftHand);
-    drawHand(rightHand);
-
-    drawParticles();
-
-    drawCursor();
+    modMenu.classList.toggle(
+        "open"
+    );
 }
+
+document
+    .getElementById("closeMods")
+    .onclick = toggleMenu;
+
+document
+    .querySelectorAll(".mod")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const name =
+                    button.dataset.mod;
+
+                mods[name] =
+                    !mods[name];
+
+                button.classList.toggle(
+                    "active",
+                    mods[name]
+                );
+
+                button.querySelector(
+                    "b"
+                ).textContent =
+                    mods[name]
+                        ? "ON"
+                        : "OFF";
+            }
+        );
+    });
 
 
 /* =========================================================
-   LOOP
+   RESET
 ========================================================= */
 
-function loop() {
+function resetPlayer(){
 
-    update();
-    draw();
+    player.x =
+        W / 2;
 
-    requestAnimationFrame(loop);
+    player.y =
+        H - 140;
+
+    player.vx =
+        0;
+
+    player.vy =
+        0;
+
+    player.rotation =
+        0;
+
+    player.grounded =
+        false;
+
+    leftHand.x =
+        W/2-100;
+
+    leftHand.y =
+        H/2;
+
+    rightHand.x =
+        W/2+100;
+
+    rightHand.y =
+        H/2;
+
+    particles=[];
 }
 
 
@@ -1451,18 +1998,112 @@ function loop() {
    START
 ========================================================= */
 
-startButton.addEventListener("click", () => {
+document
+    .getElementById("play")
+    .onclick = () => {
 
-    playing = true;
+        playing =
+            true;
 
-    gameStart = performance.now();
+        menu.style.display =
+            "none";
 
-    menu.style.display = "none";
-    hud.style.display = "block";
+        hud.style.display =
+            "block";
 
-    statusText.textContent =
-        "RUNNING";
-});
+        resetPlayer();
+    };
+
+
+/* =========================================================
+   MAIN LOOP
+========================================================= */
+
+function update(){
+
+    if (!playing)
+        return;
+
+    updatePlayer();
+
+    updateHand(
+        leftHand,
+        -25
+    );
+
+    updateHand(
+        rightHand,
+        25
+    );
+
+    handPhysics(
+        leftHand
+    );
+
+    handPhysics(
+        rightHand
+    );
+
+    updateParticles();
+
+    drawHUD();
+}
+
+function draw(){
+
+    drawBackground();
+
+    drawVines();
+
+    drawTrees();
+
+    drawPlatforms();
+
+    /*
+      Arms behind body.
+    */
+
+    drawArm(
+        leftHand
+    );
+
+    drawArm(
+        rightHand
+    );
+
+    /*
+      Body.
+    */
+
+    drawGorilla();
+
+    /*
+      Hands.
+    */
+
+    drawHand(
+        leftHand
+    );
+
+    drawHand(
+        rightHand
+    );
+
+    drawParticles();
+
+    drawCursor();
+}
+
+function loop(){
+
+    update();
+
+    draw();
+
+    requestAnimationFrame(
+        loop
+    );
+}
 
 resize();
 
