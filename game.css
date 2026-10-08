@@ -1,0 +1,31 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #87CEEB; /* Sky blue background */
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+.gorilla {
+    width: 50px;
+    height: 50px;
+    background-color: brown; /* Gorilla color */
+    position: absolute;
+    border-radius: 50%;
+    transition: transform 0.1s;
+}
+
+#player {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#tagger {
+    left: 30%;
+    top: 30%;
+}
