@@ -1,1 +1,392 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gorilla Forest</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;overflow:hidden;font-family:Arial;background:#87ceeb}
+#hud{position:fixed;top:15px;left:15px;color:white;background:#0008;padding:13px;border-radius:8px;line-height:1.6;z-index:2}
+#cross{position:fixed;top:50%;left:50%;color:white;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}
+#menu{position:fixed;inset:0;background:#000b;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;text-align:center}
+h1{font-size:48px;color:#79ec62;text-shadow:3px 3px #174c20}
+button{padding:15px 45px;border:0;border-radius:8px;background:#54c94c;color:white;font-size:22px;cursor:pointer}
+#help{margin-top:20px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="hud">
+<b>GORILLA FOREST</b><br>
+WASD: Move<br>
+Mouse: Look around<br>
+Space: Jump<br>
+Hold left/right mouse: Arm swing<br>
+R: Respawn
+</div>
+<div id="cross">+</div>
+<div id="menu">
+<h1>GORILLA FOREST</h1>
+<p>Explore the forest!</p>
+<button id="play">PLAY</button>
+<div id="help">WASD to move<br>Mouse to look<br>Click to swing your arms</div>
+</div>
+
+<script type="module">
+import * as THREE from
+'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x9ad8ee);
+scene.fog=new THREE.Fog(0x9ad8ee,35,115);
+
+const camera=new THREE.PerspectiveCamera(
+75,innerWidth/innerHeight,.1,250
+);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x52683d,2));
+
+const sunlight=new THREE.DirectionalLight(0xffffff,2.2);
+sunlight.position.set(30,45,20);
+sunlight.castShadow=true;
+sunlight.shadow.mapSize.set(2048,2048);
+scene.add(sunlight);
+
+// MATERIALS
+const mat=(color)=>new THREE.MeshStandardMaterial({color});
+const grass=mat(0x4a9b40);
+const bark=mat(0x70442a);
+const leaves=[
+mat(0x277d35),mat(0x368d3b),mat(0x176c32)
+];
+const rockMat=mat(0x777c72);
+const gorillaMat=mat(0x777777);
+const handMat=mat(0x898989);
+
+// GROUND
+const floor=new THREE.Mesh(
+new THREE.PlaneGeometry(220,220),grass);
+floor.rotation.x=-Math.PI/2;
+floor.receiveShadow=true;
+scene.add(floor);
+
+// DECORATION
+function box(x,y,z,sx,sy,sz,material){
+const m=new THREE.Mesh(
+new THREE.BoxGeometry(sx,sy,sz),material);
+m.position.set(x,y,z);
+m.castShadow=true;
+m.receiveShadow=true;
+scene.add(m);
+return m;
+}
+
+function sphere(x,y,z,s,material){
+const m=new THREE.Mesh(
+new THREE.IcosahedronGeometry(s,1),material);
+m.position.set(x,y,z);
+m.castShadow=true;
+m.receiveShadow=true;
+scene.add(m);
+return m;
+}
+
+// TREES
+function tree(x,z,scale=1){
+const trunk=new THREE.Mesh(
+new THREE.CylinderGeometry(.4*scale,.65*scale,5*scale,7),
+bark);
+trunk.position.set(x,2.5*scale,z);
+trunk.castShadow=true;
+scene.add(trunk);
+
+for(let i=0;i<4;i++){
+const crown=new THREE.Mesh(
+new THREE.IcosahedronGeometry(
+(2.1-i*.18)*scale,1),
+leaves[i%3]);
+crown.position.set(
+x+(Math.random()-.5)*1.2*scale,
+(4.2+i*.65)*scale,
+z+(Math.random()-.5)*1.2*scale
+);
+crown.castShadow=true;
+scene.add(crown);
+}
+}
+
+// FOREST LAYOUT
+for(let i=0;i<85;i++){
+const a=Math.random()*Math.PI*2;
+const r=13+Math.random()*78;
+tree(Math.cos(a)*r,Math.sin(a)*r,.7+Math.random()*.65);
+}
+
+// ROCKS
+for(let i=0;i<35;i++){
+const x=(Math.random()-.5)*100;
+const z=(Math.random()-.5)*100;
+if(Math.hypot(x,z)<12)continue;
+const r=.5+Math.random()*1.5;
+const rock=sphere(x,r*.5,z,r,rockMat);
+rock.scale.y=.7;
+}
+
+// TREE STUMP LOBBY
+const stump=new THREE.Mesh(
+new THREE.CylinderGeometry(3.5,4,2,12),
+bark);
+stump.position.set(0,1,0);
+stump.castShadow=true;
+stump.receiveShadow=true;
+scene.add(stump);
+
+const top=new THREE.Mesh(
+new THREE.CylinderGeometry(3.6,3.6,.3,12),
+mat(0xb78a53));
+top.position.set(0,2.15,0);
+scene.add(top);
+
+// TREE STUMP RINGS
+for(let i=0;i<4;i++){
+const ring=new THREE.Mesh(
+new THREE.TorusGeometry(.5+i*.55,.045,6,24),
+mat(0x81532e));
+ring.rotation.x=Math.PI/2;
+ring.position.set(0,2.32,.0);
+ring.scale.set(1,1,.6);
+scene.add(ring);
+}
+
+// SIMPLE LOBBY COMPUTER
+const computer=new THREE.Group();
+const screen=new THREE.Mesh(
+new THREE.BoxGeometry(1.4,.9,.12),
+mat(0x252525));
+screen.position.y=3.1;
+computer.add(screen);
+
+const display=new THREE.Mesh(
+new THREE.PlaneGeometry(1.2,.7),
+mat(0x50c9a0));
+display.position.set(0,3.1,.07);
+computer.add(display);
+
+const stand=new THREE.Mesh(
+new THREE.BoxGeometry(.25,.6,.25),bark);
+stand.position.y=2.65;
+computer.add(stand);
+computer.position.set(0,0,-2.4);
+scene.add(computer);
+
+// PLAYER
+const player={
+position:new THREE.Vector3(0,2.7,8),
+velocity:new THREE.Vector3(),
+yaw:0,
+pitch:0,
+grounded:false
+};
+
+camera.position.copy(player.position);
+
+// FIRST PERSON ARMS
+const arms=[];
+
+for(let side of [-1,1]){
+const arm=new THREE.Group();
+
+const upper=new THREE.Mesh(
+new THREE.CapsuleGeometry(.19,.65,5,8),
+gorillaMat);
+upper.rotation.z=side*.2;
+upper.position.y=-.45;
+arm.add(upper);
+
+const forearm=new THREE.Mesh(
+new THREE.CapsuleGeometry(.17,.55,5,8),
+gorillaMat);
+forearm.position.set(side*.05,-.9,-.05);
+arm.add(forearm);
+
+const hand=new THREE.Mesh(
+new THREE.SphereGeometry(.29,12,10),
+handMat);
+hand.scale.set(1.15,.8,1.2);
+hand.position.set(side*.07,-1.2,-.12);
+arm.add(hand);
+
+camera.add(arm);
+arm.position.set(side*.65,-.5,-.85);
+arms.push(arm);
+}
+scene.add(camera);
+
+// CONTROLS
+const keys={};
+let mouseLeft=false;
+let mouseRight=false;
+let swingTime=0;
+let yaw=0;
+let pitch=0;
+
+document.addEventListener('keydown',e=>{
+keys[e.code]=true;
+if(e.code==='KeyR')respawn();
+});
+
+document.addEventListener('keyup',e=>{
+keys[e.code]=false;
+});
+
+document.addEventListener('mousedown',e=>{
+if(e.button===0)mouseLeft=true;
+if(e.button===2)mouseRight=true;
+});
+
+document.addEventListener('mouseup',e=>{
+if(e.button===0)mouseLeft=false;
+if(e.button===2)mouseRight=false;
+});
+
+document.addEventListener('contextmenu',e=>e.preventDefault());
+
+document.addEventListener('mousemove',e=>{
+if(document.pointerLockElement!==renderer.domElement)return;
+yaw-=e.movementX*.0025;
+pitch-=e.movementY*.0025;
+pitch=Math.max(-1.35,Math.min(1.35,pitch));
+});
+
+document.getElementById('play').onclick=()=>{
+renderer.domElement.requestPointerLock();
+};
+
+document.addEventListener('pointerlockchange',()=>{
+document.getElementById('menu').style.display=
+document.pointerLockElement===renderer.domElement?'none':'flex';
+});
+
+function respawn(){
+player.position.set(0,2.7,8);
+player.velocity.set(0,0,0);
+}
+
+// MOVEMENT
+const clock=new THREE.Clock();
+const forward=new THREE.Vector3();
+const right=new THREE.Vector3();
+const move=new THREE.Vector3();
+
+function animate(){
+requestAnimationFrame(animate);
+const dt=Math.min(clock.getDelta(),.033);
+const t=clock.elapsedTime;
+
+forward.set(-Math.sin(yaw),0,-Math.cos(yaw));
+right.set(Math.cos(yaw),0,-Math.sin(yaw));
+move.set(0,0,0);
+
+if(keys.KeyW)move.add(forward);
+if(keys.KeyS)move.sub(forward);
+if(keys.KeyD)move.add(right);
+if(keys.KeyA)move.sub(right);
+
+if(move.lengthSq()>0)move.normalize();
+
+// Standard PC movement
+const acceleration=18;
+player.velocity.x+=move.x*acceleration*dt;
+player.velocity.z+=move.z*acceleration*dt;
+
+// Friction
+if(move.lengthSq()===0){
+player.velocity.x*=Math.pow(.06,dt);
+player.velocity.z*=Math.pow(.06,dt);
+}
+
+// Arm swinging
+const swinging=mouseLeft||mouseRight;
+
+if(swinging){
+swingTime+=dt*11;
+const power=mouseLeft?1:-1;
+player.velocity.x+=forward.x*power*8*dt;
+player.velocity.z+=forward.z*power*8*dt;
+}else{
+swingTime*=.8;
+}
+
+// Speed limit
+const horizontalSpeed=Math.hypot(
+player.velocity.x,player.velocity.z);
+const maxSpeed=11;
+if(horizontalSpeed>maxSpeed){
+player.velocity.x*=maxSpeed/horizontalSpeed;
+player.velocity.z*=maxSpeed/horizontalSpeed;
+}
+
+// Jump
+if(keys.Space&&player.grounded){
+player.velocity.y=8;
+player.grounded=false;
+}
+
+player.velocity.y-=19*dt;
+
+player.position.addScaledVector(player.velocity,dt);
+
+// Ground collision
+if(player.position.y<2.7){
+player.position.y=2.7;
+player.velocity.y=Math.max(0,player.velocity.y);
+player.grounded=true;
+}
+
+// World boundaries
+const dist=Math.hypot(
+player.position.x,player.position.z);
+if(dist>95){
+player.position.x*=95/dist;
+player.position.z*=95/dist;
+}
+
+// Camera
+camera.position.copy(player.position);
+camera.rotation.order='YXZ';
+camera.rotation.y=yaw;
+camera.rotation.x=pitch;
+
+// Arms animation
+arms.forEach((arm,i)=>{
+const side=i===0?-1:1;
+const active=swinging;
+const wave=Math.sin(t*9+i*Math.PI);
+arm.rotation.x=active?wave*.8:Math.sin(t*2+i)*.06;
+arm.rotation.z=side*(active?.3+wave*.25:.08);
+arm.position.y=-.5+(active?Math.abs(wave)*.1:0);
+});
+
+renderer.render(scene,camera);
+}
+
+animate();
+
+window.addEventListener('resize',()=>{
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
+
